@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sześciokąt na Canvas</title>
+</head>
+<body>
+    <!-- Obszar do rysowania (canvas) -->
+    <canvas id="hexCanvas" width="400" height="400"></canvas>
+    <script>
+        // Pobranie elementu canvas i uzyskanie kontekstu 2D
+        const canvas = document.getElementById("hexCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Rysowanie sześciokąta
+        ctx.beginPath(); // Rozpoczęcie nowej ścieżki
+        ctx.moveTo(230, 200); // Ustawienie punktu początkowego
+        ctx.lineTo(200, 260); // Rysowanie linii do punktu (200, 260)
+        ctx.lineTo(100, 260); // Rysowanie linii do punktu (100, 260)
+        ctx.lineTo(70, 200); // Rysowanie linii do punktu (70, 200)
+        ctx.lineTo(100, 140); // Rysowanie linii do punktu (100, 140)
+        ctx.lineTo(200, 140); // Rysowanie linii do punktu (200, 140)
+        ctx.closePath(); // Zamknięcie ścieżki (połączenie z pierwszym punktem)
+        ctx.strokeStyle = "black"; // Ustawienie koloru konturu na czarny
+        ctx.lineWidth = 5; // Ustawienie szerokości konturu
+        ctx.stroke(); // Rysowanie konturu
+        ctx.fillStyle = "#9c2cfc"; // Ustawienie koloru wypełnienia na fioletowy
+        ctx.fill(); // Wypełnienie sześciokąta
+
+        // Funkcja rysująca oko
+        function drawEye(x, y, outerRadius, innerRadius, dotRadius) {
+            // Rysowanie białej części oka
+            ctx.beginPath();
+            ctx.arc(x, y, outerRadius, 0, Math.PI * 2); // Okrąg zewnętrzny (białko)
+            ctx.fillStyle = "white"; // Ustawienie koloru wypełnienia na biały
+            ctx.fill();
+
+            // Rysowanie czarnej części oka (źrenica)
+            ctx.beginPath();
+            ctx.arc(x, y, innerRadius, 0, Math.PI * 2); // Okrąg wewnętrzny (źrenica)
+            ctx.fillStyle = "black"; // Ustawienie koloru wypełnienia na czarny
+            ctx.fill();
+
+            // Rysowanie białej kropki w oku (odbicie światła)
+            ctx.beginPath();
+            ctx.arc(x - innerRadius / 3, y - innerRadius / 3, dotRadius, 0, Math.PI * 2); // Kropka w oku
+            ctx.fillStyle = "white"; // Ustawienie koloru wypełnienia na biały
+            ctx.fill();
+        }
+
+        // Rysowanie oczu
+        drawEye(120, 180, 12, 8, 3); // Lewe oko
+        drawEye(180, 180, 12, 8, 3); // Prawe oko
+
+        // Rysowanie uśmiechu (elipsa)
+        ctx.beginPath(); // Rozpoczęcie nowej ścieżki
+        ctx.ellipse(152, 220, 17, 9, Math.PI * 2, 0, Math.PI); // Rysowanie elipsy (uśmiech)
+        ctx.fillStyle = "black"; // Ustawienie koloru wypełnienia na czarny
+        ctx.fill(); // Wypełnienie elipsy
+
+        // Rysowanie zębów (kwadraty)
+        ctx.fillStyle = "white"; // Ustawienie koloru wypełnienia na biały
+        ctx.fillRect(155, 220, 5, 5); // Lewy ząb
+        ctx.fillRect(145, 220, 5, 5); // Prawy ząb
+
+        // Rysowanie górnych zębów
+        ctx.beginPath();
+        ctx.ellipse(172, 219, 4, 3, Math.PI / 4, 0, Math.PI); // Górny lewy ząb
+        ctx.strokeStyle = "black"; // Ustawienie koloru konturu na czarny
+        ctx.lineWidth = 2; // Ustawienie szerokości konturu na 2
+        ctx.stroke(); // Rysowanie konturu
+
+        ctx.beginPath();
+        ctx.ellipse(132, 219, 4, 3, Math.PI * 1.7, 0, Math.PI); // Górny prawy ząb
+        ctx.strokeStyle = "black"; // Ustawienie koloru konturu na czarny
+        ctx.lineWidth = 2; // Ustawienie szerokości konturu na 2
+        ctx.stroke(); // Rysowanie konturu
+    </script>
+</body>
+</html>

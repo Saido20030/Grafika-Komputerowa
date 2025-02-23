@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab2Ex2</title>
+    <style>
+        /* Stylowanie canvasu – dodanie obramowania */
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <!-- Przycisk do czyszczenia canvasu -->
+    <button id="clearButton">Clear</button>
+    
+    <!-- Wybór figury do rysowania -->
+    <select id="shapeSelect">
+        <option value="square">Kwadrat</option>
+        <option value="nonagon">Dziewięciokąt</option>
+    </select>
+    
+    <!-- Wybór koloru dla rysowanej figury -->
+    <select id="colorSelect">
+        <option value="black">Czarny</option>
+        <option value="red">Czerwony</option>
+        <option value="blue">Niebieski</option>
+        <option value="green">Zielony</option>
+    </select>
+    
+    <!-- Obszar do rysowania (canvas) -->
+    <canvas id="drawingCanvas" width="500" height="500"></canvas>
+    
+    <script>
+        // Pobieranie elementów DOM
+        const canvas = document.getElementById("drawingCanvas");
+        const ctx = canvas.getContext("2d"); // Kontekst 2D, który umożliwia rysowanie
+        const clearButton = document.getElementById("clearButton"); // Przycisk czyszczenia
+        const shapeSelect = document.getElementById("shapeSelect"); // Lista wyboru figury
+        const colorSelect = document.getElementById("colorSelect"); // Lista wyboru koloru
+
+        // Funkcja czyszcząca canvas
+        function doClear() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyści cały obszar canvasu
+        }
+
+        // Przypisanie funkcji czyszczącej do przycisku "Clear"
+        clearButton.onclick = doClear;
+
+        // Dodanie nowej opcji koloru (fioletowy) do listy wyboru kolorów
+        const newColorOption = document.createElement("option");
+        newColorOption.value = "purple"; // Kolor fioletowy
+        newColorOption.textContent = "Fioletowy"; // Tekst, który będzie wyświetlany
+        colorSelect.appendChild(newColorOption); // Dodanie do selecta
+
+        // Funkcja rysująca kwadrat w zadanej pozycji i kolorze
+        function drawSquare(x, y, color) {
+            ctx.fillStyle = color; // Ustawienie koloru wypełnienia
+            ctx.fillRect(x - 10, y - 10, 20, 20); // Rysowanie kwadratu (pozycja i rozmiar)
+        }
+
+        // Funkcja rysująca dziewięciokąt w zadanej pozycji i kolorze
+        function drawNonagon(x, y, color) {
+            const sides = 9; // Liczba boków (9)
+            const radius = 20; // Promień okręgu, w którym mieści się dziewięciokąt
+            ctx.beginPath();
+            ctx.fillStyle = color; // Ustawienie koloru wypełnienia
+            for (let i = 0; i < sides; i++) {
+                // Obliczanie kątów i pozycji wierzchołków
+                let angle = (i * 2 * Math.PI) / sides;
+                let xPos = x + radius * Math.cos(angle); // Obliczanie X
+                let yPos = y + radius * Math.sin(angle); // Obliczanie Y
+                if (i === 0) {
+                    ctx.moveTo(xPos, yPos); // Rozpoczęcie ścieżki w pierwszym punkcie
+                } else {
+                    ctx.lineTo(xPos, yPos); // Rysowanie linii do kolejnych punktów
+                }
+            }
+            ctx.closePath(); // Zamknięcie ścieżki
+            ctx.fill(); // Wypełnienie figury
+        }
+
+        // Funkcja obsługująca ruch myszy na canvasie
+        function doMouseMove(event) {
+            const x = event.offsetX; // Pozycja X myszy na canvasie
+            const y = event.offsetY; // Pozycja Y myszy na canvasie
+            const color = colorSelect.value; // Wybór koloru z listy
+            const shape = shapeSelect.value; // Wybór figury z listy
+
+            // Rysowanie wybranej figury w wybranym kolorze
+            if (shape === "square") {
+                drawSquare(x, y, color); // Rysowanie kwadratu
+            } else if (shape === "nonagon") {
+                drawNonagon(x, y, color); // Rysowanie dziewięciokąta
+            }
+        }
+
+        // Dodanie nasłuchiwania na ruch myszy na canvasie
+        canvas.addEventListener("mousemove", doMouseMove);
+    </script>
+</body>
+</html>
