@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Scene Graph 2D</title>
+<script>
+// Klasa reprezentująca węzeł sceny (podstawowy element grafu sceny)
+class SceneNode {
+    constructor() {
+        this.children = []; // Tablica przechowująca dzieci danego węzła
+        this.transform = { x: 0, y: 0, rotation: 0 }; // Transformacje obiektu
+    }
+    
+    // Dodaje dziecko do węzła
+    addChild(node) {
+        this.children.push(node);
+    }
+    
+    // Rysuje węzeł i jego dzieci
+    draw(context) {
+        context.save();
+        context.translate(this.transform.x, this.transform.y);
+        context.rotate(this.transform.rotation);
+        
+        this.render(context); // Rysowanie bieżącego węzła
+        
+        // Rysowanie dzieci
+        for (let child of this.children) {
+            child.draw(context);
+        }
+        
+        context.restore();
+    }
+    
+    // Metoda do nadpisania w klasach pochodnych (pusta w klasie bazowej)
+    render(context) {
+    }
+}
+
+// Klasa reprezentująca huśtawkę (trójkątną podstawę i belkę)
+class Seesaw extends SceneNode {
+    constructor(color) {
+        super();
+        this.color = color; // Kolor trójkąta podstawy
+    }
+    
+    // Rysowanie huśtawki
+    render(context) {
+        context.fillStyle = this.color;
+        context.beginPath();
+        context.moveTo(-30, 100);
+        context.lineTo(30, 100);
+        context.lineTo(0, 0);
+        context.closePath();
+        context.fill();
+        
+        context.fillStyle = "red"; // Kolor belki
+        context.save();
+        context.rotate(15 * Math.PI / 180); // Rotacja belki o 15 stopni
+        context.fillRect(-150, -10, 300, 20);
+        context.restore();
+    }
+}
+
+// Klasa reprezentująca wielokąt foremny
+class Polygon extends SceneNode {
+    constructor(sides, radius) {
+        super();
+        this.sides = sides; // Liczba boków
+        this.radius = radius; // Promień okręgu opisującego wielokąt
+    }
+    
+    // Rysowanie wielokąta
+    render(context) {
+        context.strokeStyle = "black";
+        context.beginPath();
+        for (let i = 0; i < this.sides; i++) {
+            let angle1 = (i * 2 * Math.PI) / this.sides;
+            let angle2 = ((i + 1) * 2 * Math.PI) / this.sides;
+            context.moveTo(0, 0);
+            context.lineTo(this.radius * Math.cos(angle1), this.radius * Math.sin(angle1));
+            context.lineTo(this.radius * Math.cos(angle2), this.radius * Math.sin(angle2));
+            context.closePath();
+        }
+        context.stroke();
+    }
+}
+
+let canvas, context, rootNode, frameNumber = 0;
+
+// Tworzenie grafu sceny (sceny z huśtawkami i wielokątami)
+function createSceneGraph() {
+    rootNode = new SceneNode();
+    
+    // Funkcja pomocnicza do tworzenia huśtawki i jej wielokątów
+    function createSeesawWithPolygons(x, y, seesawColor) {
+        let seesaw = new Seesaw(seesawColor);
+        seesaw.transform.x = x;
+        seesaw.transform.y = y;
+        rootNode.addChild(seesaw);
+        
+        let poly1 = new Polygon(9, 50);
+        poly1.transform.x = -140;
+        poly1.transform.y = -40;
+        seesaw.addChild(poly1);
+        
+        let poly2 = new Polygon(9, 50);
+        poly2.transform.x = 140;
+        poly2.transform.y = 40;
+        seesaw.addChild(poly2);
+    }
+    
+    // Tworzenie kilku huśtawek na scenie
+    createSeesawWithPolygons(canvas.width / 2, canvas.height / 2 + 100, "blue");
+    createSeesawWithPolygons(canvas.width / 4, canvas.height / 4, "purple");
+    createSeesawWithPolygons(3 * canvas.width / 4, canvas.height / 4, "green");
+}
+
+// Aktualizacja klatki animacji (obracanie wielokątów)
+function updateFrame() {
+    frameNumber += 1; // Powolna rotacja
+    for (let seesaw of rootNode.children) {
+        for (let poly of seesaw.children) {
+            poly.transform.rotation = (frameNumber * Math.PI) / 180; // Obrót o 1 stopień
+        }
+    }
+}
+
+// Rysowanie sceny
+function draw() {
+    context.clearRect(0, 0, canvas.width, canvas.height); // Czyszczenie ekranu
+    updateFrame(); // Aktualizacja pozycji
+    rootNode.draw(context); // Rysowanie grafu sceny
+    requestAnimationFrame(draw); // Kolejna klatka animacji
+}
+
+// Inicjalizacja aplikacji
+function init() {
+    canvas = document.getElementById("thecanvas");
+    context = canvas.getContext("2d");
+    createSceneGraph(); // Tworzenie sceny
+    draw(); // Start animacji
+}
+
+// Uruchomienie aplikacji po załadowaniu dokumentu
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</head>
+<body style="background-color:#EEEEEE">
+<h3>Rotating Polygons Animation</h3>
+<canvas id="thecanvas" width="800" height="600" style="border:1px solid black;"></canvas>
+</body>
+</html>
