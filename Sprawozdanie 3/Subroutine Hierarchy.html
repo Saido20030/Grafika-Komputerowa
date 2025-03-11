@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Subroutine Hierarchy</title>
+<script>
+let canvas, context, frameNumber = 0;
+
+// Funkcja rysująca huśtawkę
+function drawSeesaw(context, x, y, color) {
+    context.save();
+    context.translate(x, y);
+    
+    // Rysowanie podstawy
+    context.fillStyle = color;
+    context.beginPath();
+    context.moveTo(-30, 100);
+    context.lineTo(30, 100);
+    context.lineTo(0, 0);
+    context.closePath();
+    context.fill();
+    
+    // Rysowanie belki
+    context.fillStyle = "red";
+    context.save();
+    context.rotate(15 * Math.PI / 180);
+    context.fillRect(-150, -10, 300, 20);
+    context.restore();
+    
+    context.restore();
+}
+
+// Funkcja rysująca wielokąt foremny
+function drawPolygon(context, x, y, sides, radius, rotation) {
+    context.save();
+    context.translate(x, y);
+    context.rotate(rotation);
+    
+    context.strokeStyle = "black";
+    context.beginPath();
+    for (let i = 0; i < sides; i++) {
+        let angle1 = (i * 2 * Math.PI) / sides;
+        let angle2 = ((i + 1) * 2 * Math.PI) / sides;
+        context.moveTo(0, 0);
+        context.lineTo(radius * Math.cos(angle1), radius * Math.sin(angle1));
+        context.lineTo(radius * Math.cos(angle2), radius * Math.sin(angle2));
+        context.closePath();
+    }
+    context.stroke();
+    
+    context.restore();
+}
+
+// Funkcja rysująca całą scenę
+function drawScene() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    
+    let rotation = (frameNumber * Math.PI) / 180;
+    
+    // Rysowanie huśtawek i wielokątów
+    drawSeesaw(context, canvas.width / 2, canvas.height / 2 + 100, "blue");
+    drawPolygon(context, canvas.width / 2 - 140, canvas.height / 2 + 60, 9, 50, rotation);
+    drawPolygon(context, canvas.width / 2 + 140, canvas.height / 2 + 140, 9, 50, rotation);
+    
+    drawSeesaw(context, canvas.width / 4, canvas.height / 4, "purple");
+    drawPolygon(context, canvas.width / 4 - 140, canvas.height / 4 - 40, 9, 50, rotation);
+    drawPolygon(context, canvas.width / 4 + 140, canvas.height / 4 + 40, 9, 50, rotation);
+    
+    drawSeesaw(context, 3 * canvas.width / 4, canvas.height / 4, "green");
+    drawPolygon(context, 3 * canvas.width / 4 - 140, canvas.height / 4 - 40, 9, 50, rotation);
+    drawPolygon(context, 3 * canvas.width / 4 + 140, canvas.height / 4 + 40, 9, 50, rotation);
+    
+    frameNumber += 1;
+    requestAnimationFrame(drawScene);
+}
+
+// Inicjalizacja
+function init() {
+    canvas = document.getElementById("thecanvas");
+    context = canvas.getContext("2d");
+    drawScene();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</head>
+<body style="background-color:#EEEEEE">
+<h3>Rotating Polygons Animation</h3>
+<canvas id="thecanvas" width="800" height="600" style="border:1px solid black;"></canvas>
+</body>
+</html>
