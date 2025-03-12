@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+    <rect width="100%" height="100%" fill="#EEEEEE"/>
+    <g id="scene">
+        <!-- Huśtawki -->
+        <g transform="translate(400, 400)">
+            <polygon points="-30,100 30,100 0,0" fill="blue"/>
+            <rect x="-150" y="-10" width="300" height="20" fill="red" transform="rotate(15)"/>
+        </g>
+        <g transform="translate(200, 150)">
+            <polygon points="-30,100 30,100 0,0" fill="purple"/>
+            <rect x="-150" y="-10" width="300" height="20" fill="red" transform="rotate(15)"/>
+        </g>
+        <g transform="translate(600, 150)">
+            <polygon points="-30,100 30,100 0,0" fill="green"/>
+            <rect x="-150" y="-10" width="300" height="20" fill="red" transform="rotate(15)"/>
+        </g>
+        
+        <!-- Dziewięciokąty złożone z trójkątów -->
+        <g transform="translate(260, 360)">
+            <g id="polygon1">
+                <g fill="none" stroke="black">
+                    <polygon points="0,0 50,0 39,30"/>
+                    <polygon points="0,0 39,30 15,48"/>
+                    <polygon points="0,0 15,48 -15,48"/>
+                    <polygon points="0,0 -15,48 -39,30"/>
+                    <polygon points="0,0 -50,0 -39,-30"/>
+                    <polygon points="0,0 -39,-30 -15,-48"/>
+                    <polygon points="0,0 -15,-48 15,-48"/>
+                    <polygon points="0,0 15,-48 39,-30"/>
+                    <polygon points="0,0 39,-30 50,0"/>
+                    <polygon points="0,0 -50,0 -39,30"/>
+                </g>
+                <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="5s" repeatCount="indefinite"/>
+            </g>
+        </g>
+        <g transform="translate(540, 440)">
+            <use href="#polygon1"/>
+        </g>
+        <g transform="translate(60, 110)">
+            <use href="#polygon1"/>
+        </g>
+        <g transform="translate(340, 190)">
+            <use href="#polygon1"/>
+        </g>
+        <g transform="translate(460, 110)">
+            <use href="#polygon1"/>
+        </g>
+        <g transform="translate(740, 190)">
+            <use href="#polygon1"/>
+        </g>
+    </g>
+</svg>
