@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rotating Pyramid with Lighting</title>
+    <script src="glsim.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; cursor: grab; }
+    </style>
+</head>
+<body onload="init()">
+    <canvas id="glCanvas" width="600" height="600"></canvas>
+    <script>
+        let baseAngle = 0;
+        let isDragging = false;
+        let lastX;
+        let lightAngle = 0;
+        let gl;
+
+        function drawPyramid() {
+            let baseVertices = [];
+            let sides = 9;
+            let r = 0.5;
+            let colors = [
+                [1, 0.2, 0.2], [0.2, 1, 0.2], [0.2, 0.2, 1],
+                [1, 1, 0.2], [1, 0.2, 1], [0.2, 1, 1],
+                [0.7, 0.5, 0.2], [0.5, 0.2, 0.7], [0.2, 0.7, 0.5]
+            ];
+            
+            for (let i = 0; i < sides; i++) {
+                let angle = (2 * Math.PI * i) / sides;
+                baseVertices.push([r * Math.cos(angle), 0, r * Math.sin(angle)]);
+            }
+            let top = [0, 1, 0];
+
+            for (let i = 0; i < sides; i++) {
+                glBegin(GL_TRIANGLES);
+                glColor3fv(colors[i % colors.length]);
+                glVertex3fv(baseVertices[i]);
+                glVertex3fv(baseVertices[(i + 1) % sides]);
+                glVertex3fv(top);
+                glEnd();
+            }
+        }
+
+        function drawBase() {
+            glBegin(GL_TRIANGLE_FAN);
+            glColor3f(0.3, 0.3, 0.3);
+            glVertex3f(0, 0, 0);
+            let sides = 9;
+            let r = 0.7;
+            for (let i = 0; i <= sides; i++) {
+                let angle = (2 * Math.PI * i) / sides;
+                glVertex3f(r * Math.cos(angle), 0, r * Math.sin(angle));
+            }
+            glEnd();
+        }
+
+        function drawLight() {
+            let lightX = Math.cos(lightAngle) * 2;
+            let lightZ = Math.sin(lightAngle) * 2;
+            glColor3f(1, 1, 0);
+            glPointSize(8);
+            glBegin(GL_POINTS);
+            glVertex3f(lightX, 1.5, lightZ);
+            glEnd();
+        }
+
+        function init() {
+            let canvas = document.getElementById("glCanvas");
+            gl = new GLSim(canvas);
+            
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_LIGHTING);
+            glEnable(GL_LIGHT0);
+            glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.3, 1]);
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, [1, 1, 1, 1]);
+            
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluPerspective(45, 1, 1, 10);
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            gluLookAt(0, 2, 4, 0, 0, 0, 0, 1, 0);
+            
+            canvas.addEventListener("mousedown", (event) => {
+                isDragging = true;
+                lastX = event.clientX;
+                canvas.style.cursor = "grabbing";
+            });
+            
+            canvas.addEventListener("mousemove", (event) => {
+                if (isDragging) {
+                    let deltaX = event.clientX - lastX;
+                    baseAngle += deltaX * 0.5;
+                    lastX = event.clientX;
+                    drawScene();
+                }
+            });
+            
+            canvas.addEventListener("mouseup", () => {
+                isDragging = false;
+                canvas.style.cursor = "grab";
+            });
+            
+            canvas.addEventListener("mouseleave", () => {
+                isDragging = false;
+                canvas.style.cursor = "grab";
+            });
+            
+            animateLight();
+        }
+
+        function animateLight() {
+            lightAngle += 0.02;
+            drawScene();
+            requestAnimationFrame(animateLight);
+        }
+
+        function drawScene() {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glLoadIdentity();
+            gluLookAt(0, 2, 4, 0, 0, 0, 0, 1, 0);
+            
+            glPushMatrix();
+            glRotatef(baseAngle, 0, 1, 0);
+            drawBase();
+            drawPyramid();
+            glPopMatrix();
+            
+            drawLight();
+            glFlush();
+        }
+    </script>
+</body>
+</html>

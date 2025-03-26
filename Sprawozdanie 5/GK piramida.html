@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rotating Pyramid in OpenGL</title>
+    <script src="glsim.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; cursor: grab; }
+    </style>
+</head>
+<body onload="init()">
+    <canvas id="glCanvas" width="600" height="600"></canvas>
+    <script>
+        let angleX = 0;
+        let angleY = 0;
+        let isDragging = false;
+        let lastX, lastY;
+
+        function drawTriangle(v1, v2, v3, color) {
+            glColor3fv(color);
+            glBegin(GL_TRIANGLES);
+            glVertex3fv(v1);
+            glVertex3fv(v2);
+            glVertex3fv(v3);
+            glEnd();
+        }
+
+        function drawPyramid() {
+            let baseVertices = [];
+            let sides = 9;
+            let r = 0.5;
+            let colors = [
+                [1, 0, 0], [0, 1, 0], [0, 0, 1],
+                [1, 1, 0], [1, 0, 1], [0, 1, 1],
+                [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]
+            ];
+            
+            for (let i = 0; i < sides; i++) {
+                let angle = (2 * Math.PI * i) / sides;
+                baseVertices.push([r * Math.cos(angle), 0, r * Math.sin(angle)]);
+            }
+            let top = [0, 1, 0];
+
+            for (let i = 0; i < sides; i++) {
+                drawTriangle(baseVertices[i], baseVertices[(i + 1) % sides], top, colors[i % colors.length]);
+            }
+            
+            glColor3f(0.5, 0.5, 0.5);
+            glBegin(GL_TRIANGLES);
+            for (let i = 1; i < sides - 1; i++) {
+                glVertex3fv(baseVertices[0]);
+                glVertex3fv(baseVertices[i]);
+                glVertex3fv(baseVertices[i + 1]);
+            }
+            glEnd();
+        }
+
+        function init() {
+            let canvas = document.getElementById("glCanvas");
+            let glsim = new GLSim(canvas);
+            glEnable(GL_DEPTH_TEST);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluPerspective(45, 1, 1, 10);
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            gluLookAt(0, 1, 3, 0, 0, 0, 0, 1, 0);
+            
+            canvas.addEventListener("mousedown", (event) => {
+                isDragging = true;
+                lastX = event.clientX;
+                lastY = event.clientY;
+                canvas.style.cursor = "grabbing";
+            });
+            
+            canvas.addEventListener("mousemove", (event) => {
+                if (isDragging) {
+                    let deltaX = event.clientX - lastX;
+                    let deltaY = event.clientY - lastY;
+                    angleX += deltaY * 0.5;
+                    angleY += deltaX * 0.5;
+                    lastX = event.clientX;
+                    lastY = event.clientY;
+                    drawScene();
+                }
+            });
+            
+            canvas.addEventListener("mouseup", () => {
+                isDragging = false;
+                canvas.style.cursor = "grab";
+            });
+            
+            canvas.addEventListener("mouseleave", () => {
+                isDragging = false;
+                canvas.style.cursor = "grab";
+            });
+            
+            drawScene();
+        }
+
+        function drawScene() {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glLoadIdentity();
+            gluLookAt(0, 1, 3, 0, 0, 0, 0, 1, 0);
+            glRotatef(angleX, 1, 0, 0);
+            glRotatef(angleY, 0, 1, 0);
+            drawPyramid();
+        }
+    </script>
+</body>
+</html>
