@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Piramida 9-boczna z teksturą</title>
+  <style>
+    html, body { margin: 0; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+  </style>
+</head>
+<body>
+<canvas id="webglCanvas"></canvas>
+<script type="module">
+import { mat4 } from 'https://cdn.skypack.dev/gl-matrix';
+
+const płótno = document.getElementById("webglCanvas");
+const kontekst = płótno.getContext("webgl");
+if (!kontekst) alert("WebGL nie jest obsługiwany");
+
+const źródłoVS = `
+attribute vec4 aVertexPosition;
+attribute vec2 aTextureCoord;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+varying highp vec2 vTextureCoord;
+void main(void) {
+  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+  vTextureCoord = aTextureCoord;
+}`;
+const źródłoFS = `
+precision mediump float;
+varying highp vec2 vTextureCoord;
+uniform sampler2D uSampler;
+void main(void) {
+  gl_FragColor = texture2D(uSampler, vTextureCoord);
+}`;
+
+function załadujShader(typ, kod) {
+  const shader = kontekst.createShader(typ);
+  kontekst.shaderSource(shader, kod);
+  kontekst.compileShader(shader);
+  return shader;
+}
+
+const shaderVS = załadujShader(kontekst.VERTEX_SHADER, źródłoVS);
+const shaderFS = załadujShader(kontekst.FRAGMENT_SHADER, źródłoFS);
+const programShaderów = kontekst.createProgram();
+kontekst.attachShader(programShaderów, shaderVS);
+kontekst.attachShader(programShaderów, shaderFS);
+kontekst.linkProgram(programShaderów);
+
+const infoProgramu = {
+  program: programShaderów,
+  attribLocations: {
+    vertexPosition: kontekst.getAttribLocation(programShaderów, 'aVertexPosition'),
+    textureCoord: kontekst.getAttribLocation(programShaderów, 'aTextureCoord'),
+  },
+  uniformLocations: {
+    projectionMatrix: kontekst.getUniformLocation(programShaderów, 'uProjectionMatrix'),
+    modelViewMatrix: kontekst.getUniformLocation(programShaderów, 'uModelViewMatrix'),
+    uSampler: kontekst.getUniformLocation(programShaderów, 'uSampler'),
+  },
+};
+
+function stworzPiramideDziewieciokatna() {
+  const krokKąta = (2 * Math.PI) / 9;
+  const promień = 1;
+  const wysokość = 1.0; 
+  const wierzcholki = [];
+  const koordynatyTekstury = [];
+
+  for (let i = 0; i < 9; i++) {
+    const kąt1 = i * krokKąta;
+    const kąt2 = ((i + 1) % 9) * krokKąta;
+    wierzcholki.push(
+      0, 0, 0,
+      promień * Math.cos(kąt1), 0, promień * Math.sin(kąt1),
+      promień * Math.cos(kąt2), 0, promień * Math.sin(kąt2)
+    );
+    koordynatyTekstury.push(0.5, 0.5, 0, 1, 1, 1);
+  }
+
+  for (let i = 0; i < 9; i++) {
+    const kąt1 = i * krokKąta;
+    const kąt2 = ((i + 1) % 9) * krokKąta;
+    const x1 = promień * Math.cos(kąt1);
+    const z1 = promień * Math.sin(kąt1);
+    const x2 = promień * Math.cos(kąt2);
+    const z2 = promień * Math.sin(kąt2);
+    wierzcholki.push(
+      x1, 0, z1,
+      0, wysokość, 0,
+      x2, 0, z2
+    );
+    koordynatyTekstury.push(0, 1, 0.5, 0, 1, 1);
+  }
+
+  return { wierzcholki, koordynatyTekstury };
+}
+
+const { wierzcholki, koordynatyTekstury } = stworzPiramideDziewieciokatna();
+
+const buforPozycji = kontekst.createBuffer();
+kontekst.bindBuffer(kontekst.ARRAY_BUFFER, buforPozycji);
+kontekst.bufferData(kontekst.ARRAY_BUFFER, new Float32Array(wierzcholki), kontekst.STATIC_DRAW);
+
+const buforTekstury = kontekst.createBuffer();
+kontekst.bindBuffer(kontekst.ARRAY_BUFFER, buforTekstury);
+kontekst.bufferData(kontekst.ARRAY_BUFFER, new Float32Array(koordynatyTekstury), kontekst.STATIC_DRAW);
+
+function załadujTeksturę(link) {
+  const tekstura = kontekst.createTexture();
+  kontekst.bindTexture(kontekst.TEXTURE_2D, tekstura);
+  kontekst.texImage2D(kontekst.TEXTURE_2D, 0, kontekst.RGBA, 1, 1, 0,
+                      kontekst.RGBA, kontekst.UNSIGNED_BYTE, new Uint8Array([200, 0, 0, 255]));
+
+  const obrazek = new Image();
+  obrazek.crossOrigin = "anonymous";
+  obrazek.onload = () => {
+    kontekst.bindTexture(kontekst.TEXTURE_2D, tekstura);
+    kontekst.texImage2D(kontekst.TEXTURE_2D, 0, kontekst.RGBA, kontekst.RGBA,
+                        kontekst.UNSIGNED_BYTE, obrazek);
+    kontekst.generateMipmap(kontekst.TEXTURE_2D);
+    kontekst.texParameteri(kontekst.TEXTURE_2D, kontekst.TEXTURE_MIN_FILTER, kontekst.LINEAR_MIPMAP_LINEAR);
+    kontekst.texParameteri(kontekst.TEXTURE_2D, kontekst.TEXTURE_MAG_FILTER, kontekst.LINEAR);
+    renderujScene();
+  };
+  obrazek.src = link;
+  return tekstura;
+}
+
+const teksturaPiramidy = załadujTeksturę("clouds.jpg");
+
+let przesuwanie = false;
+let poprzedniX = 0, poprzedniY = 0;
+let obrótX = 0, obrótY = 0;
+
+płótno.addEventListener('mousedown', (e) => {
+  przesuwanie = true;
+  poprzedniX = e.clientX;
+  poprzedniY = e.clientY;
+  płótno.style.cursor = 'grabbing';
+});
+płótno.addEventListener('mouseup', () => {
+  przesuwanie = false;
+  płótno.style.cursor = 'grab';
+});
+płótno.addEventListener('mousemove', (e) => {
+  if (!przesuwanie) return;
+  const przesX = e.clientX - poprzedniX;
+  const przesY = e.clientY - poprzedniY;
+  obrótY += przesX * 0.01;
+  obrótX += przesY * 0.01;
+  poprzedniX = e.clientX;
+  poprzedniY = e.clientY;
+  renderujScene();
+});
+
+const macierzRzutowania = mat4.create();
+
+function renderujScene() {
+  płótno.width = płótno.clientWidth;
+  płótno.height = płótno.clientHeight;
+  kontekst.viewport(0, 0, płótno.width, płótno.height);
+
+  kontekst.clearColor(1, 1, 1, 1);
+  kontekst.clear(kontekst.COLOR_BUFFER_BIT | kontekst.DEPTH_BUFFER_BIT);
+  kontekst.enable(kontekst.DEPTH_TEST);
+
+  const macierzModeluWidoku = mat4.create();
+  mat4.perspective(macierzRzutowania, 45 * Math.PI / 180,
+                   płótno.width / płótno.height, 0.1, 100.0);
+  mat4.translate(macierzModeluWidoku, macierzModeluWidoku, [0.0, -0.5, -5.5]);
+  mat4.rotateX(macierzModeluWidoku, macierzModeluWidoku, obrótX);
+  mat4.rotateY(macierzModeluWidoku, macierzModeluWidoku, obrótY);
+
+  kontekst.useProgram(infoProgramu.program);
+
+  kontekst.bindBuffer(kontekst.ARRAY_BUFFER, buforPozycji);
+  kontekst.vertexAttribPointer(infoProgramu.attribLocations.vertexPosition, 3, kontekst.FLOAT, false, 0, 0);
+  kontekst.enableVertexAttribArray(infoProgramu.attribLocations.vertexPosition);
+
+  kontekst.bindBuffer(kontekst.ARRAY_BUFFER, buforTekstury);
+  kontekst.vertexAttribPointer(infoProgramu.attribLocations.textureCoord, 2, kontekst.FLOAT, false, 0, 0);
+  kontekst.enableVertexAttribArray(infoProgramu.attribLocations.textureCoord);
+
+  kontekst.uniformMatrix4fv(infoProgramu.uniformLocations.projectionMatrix, false, macierzRzutowania);
+  kontekst.uniformMatrix4fv(infoProgramu.uniformLocations.modelViewMatrix, false, macierzModeluWidoku);
+
+  kontekst.activeTexture(kontekst.TEXTURE0);
+  kontekst.bindTexture(kontekst.TEXTURE_2D, teksturaPiramidy);
+  kontekst.uniform1i(infoProgramu.uniformLocations.uSampler, 0);
+
+  kontekst.drawArrays(kontekst.TRIANGLES, 0, wierzcholki.length / 3);
+}
+
+renderujScene();
+</script>
+</body>
+</html>
