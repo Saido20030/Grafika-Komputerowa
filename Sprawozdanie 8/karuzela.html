@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>Karuzela</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/build/three.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        "use strict";
+
+let płótno, renderuj, scena, kamera;
+let sterowanie;
+let animacjaWłączona = false;
+let numerKlatki = 0;
+
+let obiekty = {
+    konstrukcja: [],
+    osieObrotu: [],
+    konie: [],
+};
+
+function rysujScenę() {
+    renderuj.render(scena, kamera);
+}
+
+function utwórzŚwiat() {
+    renderuj.setClearColor("white");
+    scena = new THREE.Scene();
+
+    kamera = new THREE.PerspectiveCamera(30, płótno.width / płótno.height, 0.1, 100);
+    kamera.position.z = 30;
+
+    const światło = new THREE.DirectionalLight();
+    światło.position.set(0, 0, 1);
+    kamera.add(światło);
+    scena.add(kamera);
+
+    const podłoże = new THREE.Mesh(
+        new THREE.CylinderGeometry(12, 12, 0.6, 13, 1),
+        new THREE.MeshMatcapMaterial({
+            color: 0x441c84,
+            specular: 0x222222,
+            shininess: 8,
+            shading: THREE.FlatShading
+        }),
+    );
+    podłoże.rotation.y = Math.PI / 9;
+    scena.add(podłoże);
+
+    const dach = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 12, 3, 13, 1),
+        new THREE.MeshPhongMaterial({
+            color: 0x441c84,
+            specular: 0x222222,
+            shininess: 8,
+            shading: THREE.FlatShading
+        })
+    );
+    dach.position.y = 9.1;
+    dach.rotation.y = Math.PI / 9;
+    scena.add(dach);
+
+    const dach2 = new THREE.Mesh(
+        new THREE.CylinderGeometry(12, 12, 0.3, 13, 1),
+        new THREE.MeshPhongMaterial({
+            color: 0x441c84,
+            specular: 0x222222,
+            shininess: 8,
+            shading: THREE.FlatShading
+        })
+    );
+    dach2.position.y = 7.5;
+    dach2.rotation.y = Math.PI / 9;
+    scena.add(dach2);
+
+    const kulaZiemska = new THREE.Mesh(
+        new THREE.SphereGeometry(3.7, 32, 32),
+        new THREE.MeshBasicMaterial({ map: new THREE.MaterialLoader().load('./resources/earth.jpg') })
+    );
+    kulaZiemska.position.y = 3.8;
+    scena.add(kulaZiemska);
+
+    let słupy = [];
+    let osie = [];
+    for (let i = 0; i < 13; i++) {
+        const słup = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.2, 7.5, 13, 1),
+            new THREE.MeshPhongMaterial({
+                color: 0x7c5426,
+                specular: 0x222222,
+                shininess: 8,
+                shading: THREE.FlatShading
+            })
+        );
+
+        const kąt = i * Math.PI / 6.5;
+        const promień = 11.4;
+        const x = Math.cos(kąt) * promień;
+        const y = 3.9;
+        const z = Math.sin(kąt) * promień;
+
+        słup.position.set(x, y, z);
+        słupy.push(słup);
+
+        const oś = new THREE.Group();
+        oś.add(słup);
+        scena.add(oś);
+        osie.push(oś);
+    }
+
+    const konie = [];
+    const ładowarka = new THREE.GLTFLoader();
+    for (let i = 0; i < 13; i++) {
+        ładowarka.load('https://threejs.org/examples/models/gltf/Horse.glb', (gltf) => {
+            gltf.scene.scale.multiplyScalar(0.02);
+            gltf.scene.position.set(słupy[i].position.x, 0.5, słupy[i].position.z);
+            gltf.scene.rotation.y = -3.25 - (Math.PI * i / 6.5);
+
+            scena.add(gltf.scene);
+            konie.push(gltf.scene);
+        });
+    }
+
+    obiekty = {
+        osieObrotu: osie,
+        konie: konie,
+        konstrukcja: [podłoże, dach, dach2, kulaZiemska]
+    };
+}
+
+let kątObrotu = 0;
+function aktualizujKlatkę() {
+    const { konie, ...reszta } = obiekty;
+
+    kątObrotu += 0.1;
+
+    for (const typ in reszta) {
+        for (const element of obiekty[typ]) {
+            element.rotation.y += 0.01;
+        }
+    }
+}
+
+function zainstalujSterowanie() {
+    sterowanie = new THREE.OrbitControls(kamera, płótno);
+    sterowanie.noPan = true;
+    sterowanie.noZoom = true;
+    sterowanie.staticMoving = true;
+
+    function przesuń() {
+        sterowanie.update();
+        if (!animacjaWłączona) {
+            rysujScenę();
+        }
+    }
+
+    function nacisnij() {
+        document.addEventListener("mousemove", przesuń, false);
+    }
+
+    function puść() {
+        document.removeEventListener("mousemove", przesuń, false);
+    }
+
+    function dotknij(zdarzenie) {
+        if (zdarzenie.touches.length == 1) {
+            przesuń();
+        }
+    }
+
+    płótno.addEventListener("mousedown", nacisnij, false);
+    płótno.addEventListener("touchmove", dotknij, false);
+}
+
+function przełączAnimację() {
+    const uruchom = document.getElementById("animateCheckbox").checked;
+    if (uruchom != animacjaWłączona) {
+        animacjaWłączona = uruchom;
+        if (animacjaWłączona) {
+            requestAnimationFrame(wykonajKlatkę);
+        }
+    }
+}
+
+function wykonajKlatkę() {
+    if (animacjaWłączona) {
+        numerKlatki++;
+        aktualizujKlatkę();
+        rysujScenę();
+        requestAnimationFrame(wykonajKlatkę);
+    }
+}
+
+function inicjalizuj() {
+    try {
+        płótno = document.getElementById("glcanvas");
+        renderuj = new THREE.WebGLRenderer({
+            canvas: płótno,
+            antialias: true,
+            alpha: false
+        });
+    } catch (błąd) {
+        document.getElementById("message").innerHTML = "<b>Wystąpił błąd:<br>" + błąd + "</b>";
+        return;
+    }
+    document.getElementById("animateCheckbox").checked = false;
+    document.getElementById("animateCheckbox").onchange = przełączAnimację;
+    utwórzŚwiat();
+    zainstalujSterowanie();
+    rysujScenę();
+}
+
+    </script>
+</head>
+<body onload="inicjalizuj()">
+
+<h2>Modelowanie Three.js: Karuzela</h2>
+
+<noscript>
+    <p style="color: #AA0000; font-weight: bold">Ta strona wymaga JavaScriptu!</p>
+</noscript>
+
+<p style="color:#AA0000; font-weight: bold" id="message">
+</p>
+
+<p>
+    <label><input type="checkbox" id="animateCheckbox"><b>Animuj</b></label>
+    <b style="margin-left:50px">Użyj myszy, by obracać model.</b>
+</p>
+
+<div id="canvas-holder" style="float:left; border: thin solid black; background-color: white">
+    <canvas width="1200" height="600" id="glcanvas"></canvas>
+</div>
+
+</body>
+</html>
