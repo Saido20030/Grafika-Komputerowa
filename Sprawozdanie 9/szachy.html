@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wieża 3D</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.115/build/three.min.js"></script>
+    <style>
+        body { margin: 0; }
+        canvas { width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+<script>
+    // Inicjalizacja sceny i renderera
+    const scena3D = new THREE.Scene();
+    const kamera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 1000);
+    kamera.position.z = 7;
+
+    const wizualizator = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    wizualizator.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(wizualizator.domElement);
+
+    // Dodanie oświetlenia
+    const punktSwiatla = new THREE.PointLight(0xffffff, 1, 300);
+    punktSwiatla.position.set(-5, -1, 0.5);
+    kamera.add(punktSwiatla);
+    scena3D.add(kamera);
+
+    const czarnyMaterial = new THREE.MeshPhongMaterial({ color: 0x010101 });
+
+    // Punkty profilu wieży
+    const profilWiezy = [
+        { x: 1.5, y: 0 },
+        { x: 1.4, y: 0.2 },
+        { x: 1.1, y: 0.3 },
+        { x: 0.95, y: 0.5 },
+        { x: 0.85, y: 0.7 },
+        { x: 1.0,  y: 0.9 },
+        { x: 0.9, y: 1.05 },
+        { x: 0.7, y: 2.5 },
+        { x: 0.6, y: 3.0 },
+        { x: 0.5, y: 4 },
+        { x: 1, y: 4 },
+        { x: 1, y: 4.25 },
+        { x: 0.15, y: 4.25 },
+    ];
+
+    // Tworzenie geometrii wieży przez obrót profilu
+    const brylaObrotowa = new THREE.LatheGeometry(profilWiezy, 32);
+    const obiektWiezy = new THREE.Mesh(brylaObrotowa, czarnyMaterial);
+    obiektWiezy.position.set(0, -4, 0);
+    scena3D.add(obiektWiezy);
+
+    // Dodanie sfery (np. kopuły lub detalu)
+    const geometriaSfery = new THREE.SphereGeometry(0.8, 32, 16);
+    const kopula = new THREE.Mesh(geometriaSfery, czarnyMaterial);
+    kopula.position.set(0, 1, 0);
+    scena3D.add(kopula);
+
+    // Funkcja animacji
+    function renderujObraz() {
+        requestAnimationFrame(renderujObraz);
+        wizualizator.render(scena3D, kamera);
+    }
+
+    renderujObraz();
+</script>
+</body>
+</html>
